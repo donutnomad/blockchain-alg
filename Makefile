@@ -1,0 +1,4 @@
+
+
+test-all:
+	go test ./...
