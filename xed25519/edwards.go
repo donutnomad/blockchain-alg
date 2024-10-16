@@ -5,20 +5,6 @@ import (
 	"filippo.io/edwards25519/field"
 )
 
-type PublicKey [32]byte
-
-// ToCurve25519 Ed25519's PublicKey to Curve25519
-func (pub PublicKey) ToCurve25519() (PublicKey, error) {
-	return edwardsToMontgomery(pub)
-}
-
-// ToEd25519 Curve25519's PublicKey to Ed25519
-func (pub PublicKey) ToEd25519() (out PublicKey) {
-	res := montgomeryToEdwards(pub)
-	copy(out[:], res)
-	return out
-}
-
 var one = new(field.Element).One()
 
 func edwardsToMontgomery(publicKey [32]byte) (out [32]byte, _ error) {

@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"github.com/donutnomad/blockchain-alg/internal/utils"
+	"github.com/donutnomad/blockchain-alg/xed25519"
 	"github.com/samber/lo"
 	"io"
 	"testing"
@@ -33,10 +34,10 @@ func TestSign2(t *testing.T) {
 	message := []byte("data to be sign")
 	for i := 0; i < 10000; i++ {
 		var priBs = [32]byte(randBs(32))
-		var pub = scalarBaseMult(priBs)
+		var pub = GenPubKey(priBs)
 		var random = randBs(64)
 		var sig = Sign(priBs, message, random)
-		if !Verify(pub[:], message, sig[:]) {
+		if !Verify(pub, message, sig) {
 			panic("invalid signature")
 		}
 	}
@@ -47,7 +48,7 @@ func TestSignByEd25519Key(t *testing.T) {
 	for i := 0; i < 1; i++ {
 		publicKey, privateKey := lo.Must2(ed25519.GenerateKey(rand.Reader))
 		sig := SignByEd25519(privateKey, message)
-		if !VerifyByEd25519(publicKey[:], message, sig) {
+		if !VerifyByEd25519(xed25519.PublicKey(publicKey), message, sig) {
 			panic("invalid signature")
 		}
 	}

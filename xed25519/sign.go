@@ -48,6 +48,10 @@ func SignFromScalar(privateKey, publicKey, r [32]byte, message []byte, domPrefix
 	return signature
 }
 
+func Verify(publicKey PublicKey, message, sig []byte) bool {
+	return ed25519.Verify(publicKey[:], message, sig)
+}
+
 func must[T any](v T, err error) T {
 	if err != nil {
 		panic(err)

@@ -6,10 +6,9 @@ import (
 	"github.com/donutnomad/blockchain-alg/internal/hashs"
 	"github.com/donutnomad/blockchain-alg/xed25519"
 	"github.com/samber/lo"
-	"strconv"
 )
 
-type PublicKey []byte
+type PublicKey = xed25519.PublicKey
 
 const SignatureSize = 64
 
@@ -19,38 +18,34 @@ func Sign(priKey [32]byte, message []byte, random []byte) [64]byte {
 	priKey[0] &= 248
 	priKey[31] &= 127
 	priKey[31] |= 64
-
-	pubBs := scalarBaseMult(priKey)
-	signature := xed25519.SignFromScalar(priKey, pubBs, generateNonce(priKey, message, random), message, "", "")
-	return UniformSignature(pubBs[31], signature)
+	var ed25519PriKey = priKey
+	var ed25519PubKey = scalarBaseMult(ed25519PriKey)
+	var nonce = generateNonce(ed25519PriKey, message, random)
+	var signature = xed25519.SignFromScalar(ed25519PriKey, ed25519PubKey, nonce, message, "", "")
+	return UniformSignature(ed25519PubKey[31], signature)
 }
 
-func Verify(pubCurve25519 PublicKey, message, sig []byte) bool {
-	if l := len(pubCurve25519); l != ed25519.PublicKeySize {
-		panic("ed25519: bad public key length: " + strconv.Itoa(l))
-	}
-	if len(sig) != ed25519.SignatureSize {
-		return false
-	}
-	sig[63] &= 127
-	return ed25519.Verify(ed25519.PublicKey(pubCurve25519), message, sig)
+func Verify(pubCurve25519 PublicKey, message []byte, sig [64]byte) bool {
+	return VerifyByEd25519(pubCurve25519.ToEd25519WithSig(sig[63]), message, sig)
 }
 
 // SignByEd25519 signs a message using an Ed25519 private key and converts the resulting signature to Curve25519 format.
 func SignByEd25519(priEd25519 ed25519.PrivateKey, message []byte) Signature {
-	pubEd25519 := priEd25519[32:64]
-	signature := [64]byte(xed25519.Sign(priEd25519[:], message))
-	return UniformSignature(pubEd25519[31], signature)
+	signature := xed25519.Sign(priEd25519[:], message)
+	return UniformSignature(priEd25519[63], [64]byte(signature))
 }
 
-// VerifyByEd25519 verifies a message signature using an Ed25519 public key.
-// It checks if the provided signature, which is in Curve25519 format, is valid for the given message.
-func VerifyByEd25519(pubEd25519 ed25519.PublicKey, message []byte, sig Signature) bool {
-	if l := len(pubEd25519); l != ed25519.PublicKeySize {
-		panic("ed25519: bad public key length: " + strconv.Itoa(l))
-	}
+func VerifyByEd25519(pubEd25519 xed25519.PublicKey, message []byte, sig Signature) bool {
+	orig := sig[63]
+	defer func() {
+		sig[63] = orig
+	}()
 	sig[63] &= 127
 	return ed25519.Verify(pubEd25519[:], message, sig[:])
+}
+
+func GenPubKey(pri [32]byte) [32]byte {
+	return scalarBaseMultMontgomery(pri)
 }
 
 var magic = [32]byte{0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
@@ -68,6 +63,11 @@ func generateNonce(privateKey [32]byte, hash []byte, random []byte) (nonce [32]b
 func scalarBaseMult(v [32]byte) [32]byte {
 	scalar := lo.Must1(edwards25519.NewScalar().SetBytesWithClamping(v[:]))
 	return [32]byte(new(edwards25519.Point).ScalarBaseMult(scalar).Bytes())
+}
+
+func scalarBaseMultMontgomery(v [32]byte) [32]byte {
+	scalar := lo.Must1(edwards25519.NewScalar().SetBytesWithClamping(v[:]))
+	return [32]byte(new(edwards25519.Point).ScalarBaseMult(scalar).BytesMontgomery())
 }
 
 func mod(v [64]byte) (*edwards25519.Scalar, [32]byte) {
