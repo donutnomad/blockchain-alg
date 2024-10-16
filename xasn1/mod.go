@@ -4,7 +4,10 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"errors"
+	"golang.org/x/crypto/cryptobyte"
+	asn11 "golang.org/x/crypto/cryptobyte/asn1"
 	"math"
+	"math/big"
 )
 
 // ParseBase128Int parses a base-128 encoded int from the given offset in the
@@ -95,4 +98,27 @@ func ParsePKIXPublicKey(bs []byte) ([]byte, error) {
 		return nil, errors.New("x509: trailing data after ASN.1 of public-key")
 	}
 	return pki.PublicKey.Bytes, nil
+}
+
+func ParseSignatureRS(bs []byte) (r *big.Int, s *big.Int, _ error) {
+	var inner cryptobyte.String
+	input := cryptobyte.String(bs)
+	if !input.ReadASN1(&inner, asn11.SEQUENCE) ||
+		!input.Empty() ||
+		!inner.ReadASN1Integer(&r) ||
+		!inner.ReadASN1Integer(&s) ||
+		!inner.Empty() {
+		return nil, nil, errors.New("invalid ASN.1")
+	}
+	return r, s, nil
+}
+
+func ParseSignatureRSSlice(bs []byte) (out [64]byte, _ error) {
+	r, s, err := ParseSignatureRS(bs)
+	if err != nil {
+		return [64]byte{}, err
+	}
+	r.FillBytes(out[0:32])
+	s.FillBytes(out[32:64])
+	return out, nil
 }

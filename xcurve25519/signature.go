@@ -8,6 +8,10 @@ func UniformSignature(pubEndByte byte, signature [64]byte) Signature {
 	return signature
 }
 
-func ConvertEd25519PubKeyAndSig(pub xed25519.PublicKey, sig [64]byte) (pubCurve25519 PublicKey, _ Signature) {
-	return pub.ToEd25519(), UniformSignature(pub[len(pub)-1], sig)
+func ConvertEd25519PubKeyAndSig(pub xed25519.PublicKey, sig [64]byte) (pubCurve25519 PublicKey, _ Signature, _ error) {
+	out, err := pub.ToCurve25519()
+	if err != nil {
+		return [32]byte{}, [64]byte{}, err
+	}
+	return out, UniformSignature(pub[len(pub)-1], sig), nil
 }
