@@ -39,10 +39,11 @@ func ParsePubKey(serialized [32]byte) (key PublicKey, err error) {
 }
 
 func ParsePubKeyASN1(bs []byte) (key PublicKey, err error) {
-	serialized, err := xasn1.ParsePKIXPublicKey(bs)
+	k, err := xasn1.ParsePKIXPublicKey(bs)
 	if err != nil {
 		return PublicKey{}, err
 	}
+	serialized := k.PublicKey.Bytes
 	if len(serialized) != 32 {
 		return PublicKey{}, BadFormatPublicKeyErr
 	}

@@ -23,10 +23,11 @@ func (k *secp256k1Kit) SignANS1(asn1Key []byte, hash []byte) (SignatureCompat, e
 	if err != nil {
 		return SignatureCompat{}, err
 	}
-	if len(key) != 32 {
+	bs := key.PublicKey.Bytes
+	if len(bs) != 32 {
 		return SignatureCompat{}, BadFormatPublicKeyErr
 	}
-	return k.Sign([32]byte(key), hash), nil
+	return k.Sign([32]byte(bs), hash), nil
 }
 
 func (k *secp256k1Kit) VerifySignatureRS(pubKey []byte, rBig, sBig *big.Int, hash []byte) bool {
