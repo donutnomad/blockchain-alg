@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
+	"io"
+	"testing"
+
 	"github.com/donutnomad/blockchain-alg/internal/utils"
 	"github.com/donutnomad/blockchain-alg/xed25519"
 	"github.com/samber/lo"
-	"io"
-	"testing"
 )
 
 func TestSign(t *testing.T) {
@@ -43,13 +44,65 @@ func TestSign2(t *testing.T) {
 	}
 }
 
+func TestVerifyFailure(t *testing.T) {
+	message := []byte("data to be signed")
+	priKey := [32]byte(randBs(32))
+	pubKey := GenPubKey(priKey)
+	random := randBs(64)
+	sig := Sign(priKey, message, random)
+
+	// Test with wrong message
+	if Verify(pubKey, []byte("wrong message"), sig) {
+		t.Fatal("verification should fail with wrong message")
+	}
+
+	// Test with wrong signature
+	wrongSig := sig
+	wrongSig[0] ^= 0x01 // Flip one bit
+	if Verify(pubKey, message, wrongSig) {
+		t.Fatal("verification should fail with wrong signature")
+	}
+}
+
+func TestDifferentMessageLengths(t *testing.T) {
+	priKey := [32]byte(randBs(32))
+	pubKey := GenPubKey(priKey)
+	random := randBs(64)
+
+	// Test empty message
+	emptyMsg := []byte{}
+	sig := Sign(priKey, emptyMsg, random)
+	if !Verify(pubKey, emptyMsg, sig) {
+		t.Fatal("verification failed for empty message")
+	}
+
+	// Test very long message
+	longMsg := make([]byte, 1024*1024) // 1MB message
+	rand.Read(longMsg)
+	sig = Sign(priKey, longMsg, random)
+	if !Verify(pubKey, longMsg, sig) {
+		t.Fatal("verification failed for long message")
+	}
+}
+
+func TestPubKeyConsistency(t *testing.T) {
+	// Test that generating public key multiple times gives same result
+	priKey := [32]byte(randBs(32))
+	pubKey1 := GenPubKey(priKey)
+	pubKey2 := GenPubKey(priKey)
+
+	if !bytes.Equal(pubKey1[:], pubKey2[:]) {
+		t.Fatal("public key generation is not consistent")
+	}
+}
+
 func TestSignByEd25519Key(t *testing.T) {
 	message := []byte("data to be sign")
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 100; i++ { // Increased iterations for better coverage
 		publicKey, privateKey := lo.Must2(ed25519.GenerateKey(rand.Reader))
 		sig := SignByEd25519(privateKey, message)
 		if !VerifyByEd25519(xed25519.PublicKey(publicKey), message, sig) {
-			panic("invalid signature")
+			t.Fatal("invalid signature")
 		}
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"errors"
+	"fmt"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"golang.org/x/crypto/cryptobyte"
 	cryptobyte_asn1 "golang.org/x/crypto/cryptobyte/asn1"
@@ -56,6 +57,36 @@ func NamedECurveFromOID(oid asn1.ObjectIdentifier) elliptic.Curve {
 		return secp256k1.S256()
 	}
 	return nil
+}
+
+func OidFromNamedCurve(curve elliptic.Curve) (asn1.ObjectIdentifier, bool) {
+	switch curve {
+	case elliptic.P224():
+		return OidNamedCurveP224, true
+	case elliptic.P256():
+		return OidNamedCurveP256, true
+	case elliptic.P384():
+		return OidNamedCurveP384, true
+	case elliptic.P521():
+		return OidNamedCurveP521, true
+	case secp256k1.S256():
+		return OidNameCurveSecp256k1, true
+	}
+	return nil, false
+}
+
+func OidFromECDHCurve(curve ecdh.Curve) (asn1.ObjectIdentifier, bool) {
+	switch curve {
+	case ecdh.X25519():
+		return OidPublicKeyX25519, true
+	case ecdh.P256():
+		return OidNamedCurveP256, true
+	case ecdh.P384():
+		return OidNamedCurveP384, true
+	case ecdh.P521():
+		return OidNamedCurveP521, true
+	}
+	return nil, false
 }
 
 var (
@@ -152,7 +183,92 @@ func MarshalPKIXPublicKeyRaw(publicKeyBytes []byte, publicKeyAlgorithm pkix.Algo
 	return ret
 }
 
-//asn1.ObjectIdentifier
+// MarshalPKIXPublicKey converts a public key to PKIX, ASN.1 DER form.
+// The encoded public key is a SubjectPublicKeyInfo structure
+// (see RFC 5280, Section 4.1).
+//
+// The following key types are currently supported: *[rsa.PublicKey],
+// *[ecdsa.PublicKey], [ed25519.PublicKey] (not a pointer), and *[ecdh.PublicKey].
+// Unsupported key types result in an error.
+//
+// This kind of key is commonly encoded in PEM blocks of type "PUBLIC KEY".
+func MarshalPKIXPublicKey(pub any) ([]byte, error) {
+	var publicKeyBytes []byte
+	var publicKeyAlgorithm pkix.AlgorithmIdentifier
+	var err error
+
+	if publicKeyBytes, publicKeyAlgorithm, err = marshalPublicKey(pub); err != nil {
+		return nil, err
+	}
+
+	pkix_ := pkixPublicKey{
+		Algo: publicKeyAlgorithm,
+		BitString: asn1.BitString{
+			Bytes:     publicKeyBytes,
+			BitLength: 8 * len(publicKeyBytes),
+		},
+	}
+
+	ret, _ := asn1.Marshal(pkix_)
+	return ret, nil
+}
+
+func marshalPublicKey(pub any) (publicKeyBytes []byte, publicKeyAlgorithm pkix.AlgorithmIdentifier, err error) {
+	switch pub := pub.(type) {
+	case *rsa.PublicKey:
+		publicKeyBytes, err = asn1.Marshal(pkcs1PublicKey{
+			N: pub.N,
+			E: pub.E,
+		})
+		if err != nil {
+			return nil, pkix.AlgorithmIdentifier{}, err
+		}
+		publicKeyAlgorithm.Algorithm = OidPublicKeyRSA
+		// This is a NULL parameters value which is required by
+		// RFC 3279, Section 2.3.1.
+		publicKeyAlgorithm.Parameters = asn1.NullRawValue
+	case *ecdsa.PublicKey:
+		oid, ok := OidFromNamedCurve(pub.Curve)
+		if !ok {
+			return nil, pkix.AlgorithmIdentifier{}, errors.New("x509: unsupported elliptic curve")
+		}
+		if !pub.Curve.IsOnCurve(pub.X, pub.Y) {
+			return nil, pkix.AlgorithmIdentifier{}, errors.New("x509: invalid elliptic curve public key")
+		}
+		publicKeyBytes = elliptic.Marshal(pub.Curve, pub.X, pub.Y)
+		publicKeyAlgorithm.Algorithm = OidPublicKeyECDSA
+		var paramBytes []byte
+		paramBytes, err = asn1.Marshal(oid)
+		if err != nil {
+			return
+		}
+		publicKeyAlgorithm.Parameters.FullBytes = paramBytes
+	case ed25519.PublicKey:
+		publicKeyBytes = pub
+		publicKeyAlgorithm.Algorithm = OidPublicKeyEd25519
+	case *ecdh.PublicKey:
+		publicKeyBytes = pub.Bytes()
+		if pub.Curve() == ecdh.X25519() {
+			publicKeyAlgorithm.Algorithm = OidPublicKeyX25519
+		} else {
+			oid, ok := OidFromECDHCurve(pub.Curve())
+			if !ok {
+				return nil, pkix.AlgorithmIdentifier{}, errors.New("x509: unsupported elliptic curve")
+			}
+			publicKeyAlgorithm.Algorithm = OidPublicKeyECDSA
+			var paramBytes []byte
+			paramBytes, err = asn1.Marshal(oid)
+			if err != nil {
+				return
+			}
+			publicKeyAlgorithm.Parameters.FullBytes = paramBytes
+		}
+	default:
+		return nil, pkix.AlgorithmIdentifier{}, fmt.Errorf("x509: unsupported public key type: %T", pub)
+	}
+
+	return publicKeyBytes, publicKeyAlgorithm, nil
+}
 
 ////// RFC 8410, Section 3
 //		//	//

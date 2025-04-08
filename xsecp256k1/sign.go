@@ -32,11 +32,13 @@ func SignSecp256k1Compact(key [32]byte, hash []byte) SignatureCompat {
 
 // RecoverSecp256k1 attempts to recover the secp256k1 public key from the provided
 // compact signature and message hash.
-func RecoverSecp256k1(signature SignatureCompat, hash []byte) (*secp256k1.PublicKey, error) {
+func RecoverSecp256k1(signature SignatureCompat, hash []byte) (*PublicKey, error) {
 	array := signature.BytesVRS()
 	compact, _, err := secp_ecdsa.RecoverCompact(array[:], hash)
 	if err != nil {
 		return nil, err
 	}
-	return compact, nil
+	return &PublicKey{
+		*compact,
+	}, nil
 }

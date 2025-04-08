@@ -45,6 +45,9 @@ type SignatureCompat struct {
 func NewSignatureCompat(r *big.Int, s *big.Int, v byte) SignatureCompat {
 	return SignatureCompat{r: r, s: s, v: v}
 }
+func NewSignatureCompatWithBs(bs [65]byte) SignatureCompat {
+	return NewSignatureCompat(new(big.Int).SetBytes(bs[:32]), new(big.Int).SetBytes(bs[32:64]), bs[64])
+}
 func NewSignatureCompatWith(sig Signature, v byte) SignatureCompat {
 	return SignatureCompat{r: new(big.Int).Set(sig.r), s: new(big.Int).Set(sig.s), v: v}
 }
