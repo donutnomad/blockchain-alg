@@ -2,6 +2,7 @@ package xcurve25519
 
 import (
 	"crypto/ed25519"
+
 	"filippo.io/edwards25519"
 	"github.com/donutnomad/blockchain-alg/internal/hashs"
 	"github.com/donutnomad/blockchain-alg/xed25519"

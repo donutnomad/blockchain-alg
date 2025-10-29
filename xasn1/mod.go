@@ -4,11 +4,12 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"errors"
+	"math"
+	"math/big"
+
 	"github.com/samber/lo"
 	"golang.org/x/crypto/cryptobyte"
 	asn11 "golang.org/x/crypto/cryptobyte/asn1"
-	"math"
-	"math/big"
 )
 
 // A StructuralError suggests that the ASN.1 data is valid, but the Go type
@@ -140,7 +141,6 @@ func ParseTagAndLength(bytes []byte, initOffset int) (ret TagAndLength, offset i
 func ParseObjectIdentifier(bytes []byte) (s []int, err error) {
 	if len(bytes) == 0 {
 		panic("zero length OBJECT IDENTIFIER")
-		return
 	}
 
 	// In the worst case, we get two elements from the first byte (which is

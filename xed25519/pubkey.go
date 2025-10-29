@@ -2,6 +2,7 @@ package xed25519
 
 import (
 	"errors"
+
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/donutnomad/blockchain-alg/xasn1"
 )

@@ -2,9 +2,10 @@ package xsecp256k1
 
 import (
 	"errors"
+	"math/big"
+
 	secp_ecdsa "github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
 	"github.com/donutnomad/blockchain-alg/xasn1"
-	"math/big"
 )
 
 var BadFormatPublicKeyErr = errors.New("bad format")

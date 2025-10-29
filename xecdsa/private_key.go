@@ -7,10 +7,11 @@ import (
 	"encoding"
 	"encoding/hex"
 	"errors"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"io"
 	"math/big"
 	"reflect"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 var KeyInvalid = errors.New("invalid key")

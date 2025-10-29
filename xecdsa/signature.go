@@ -1,9 +1,10 @@
 package xecdsa
 
 import (
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/donutnomad/blockchain-alg/xasn1"
-	"math/big"
 )
 
 type ISignature interface {

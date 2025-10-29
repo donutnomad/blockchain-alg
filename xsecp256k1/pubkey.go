@@ -4,9 +4,10 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"errors"
+	"hash"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"golang.org/x/crypto/sha3"
-	"hash"
 )
 
 type Address [20]byte

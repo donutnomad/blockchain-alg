@@ -2,6 +2,7 @@ package xecdsa
 
 import (
 	"crypto/elliptic"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 

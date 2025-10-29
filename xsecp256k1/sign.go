@@ -1,9 +1,10 @@
 package xsecp256k1
 
 import (
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	secp_ecdsa "github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
-	"math/big"
 )
 
 // SignSecp256k1 generates an ECDSA signature over the secp256k1 curve for the provided

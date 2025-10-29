@@ -6,10 +6,11 @@ import (
 	"encoding"
 	"encoding/hex"
 	"errors"
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/donutnomad/blockchain-alg/xsecp256k1"
 	"github.com/donutnomad/blockchain-alg/xx509"
-	"math/big"
 )
 
 var InvalidPubKeyBytes = errors.New("invalid public key")

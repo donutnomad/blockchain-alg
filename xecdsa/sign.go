@@ -3,11 +3,12 @@ package xecdsa
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
+	"io"
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	secpEcdsa "github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
 	"github.com/donutnomad/blockchain-alg/xsecp256k1"
-	"io"
-	"math/big"
 )
 
 func (p *PrivateKey) Sign(hash []byte, reader ...io.Reader) (ISignature, error) {

@@ -3,9 +3,10 @@ package xsecp256k1
 import (
 	"errors"
 	"fmt"
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	secp_ecdsa "github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
-	"math/big"
 )
 
 type Signature struct {

@@ -3,8 +3,9 @@ package xecdsa
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"math/big"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 func SerializeCompressed(publicKey *ecdsa.PublicKey) []byte {

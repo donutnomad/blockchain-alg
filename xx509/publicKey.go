@@ -13,10 +13,11 @@ import (
 	"encoding/asn1"
 	"errors"
 	"fmt"
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"golang.org/x/crypto/cryptobyte"
 	cryptobyte_asn1 "golang.org/x/crypto/cryptobyte/asn1"
-	"math/big"
 )
 
 // RFC 5480, 2.1.1.1. Named Curve

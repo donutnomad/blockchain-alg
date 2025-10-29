@@ -3,8 +3,9 @@ package xasn1
 import (
 	"bytes"
 	"crypto/rand"
-	"github.com/samber/lo"
 	"testing"
+
+	"github.com/samber/lo"
 )
 
 func TestMarshalSigRS(t *testing.T) {

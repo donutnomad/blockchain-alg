@@ -3,6 +3,7 @@ package xed25519
 import (
 	"crypto/ed25519"
 	"crypto/sha512"
+
 	"filippo.io/edwards25519"
 )
 
