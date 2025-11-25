@@ -35,7 +35,8 @@ const (
 	// BitLen: 256 Bytes: 32
 	// N: 115792089237316195423570985008687907852837564279074904382605163141518161494337
 	Secp256k1 Algorithm = 5
-	S256      Algorithm = 6
+	// S256 Secp256k1
+	S256 Algorithm = 5
 )
 
 func (a Algorithm) FromCurve(curve elliptic.Curve) Algorithm {
@@ -93,6 +94,10 @@ func (a Algorithm) OID() asn1.ObjectIdentifier {
 	}
 }
 
+func (a Algorithm) OIDBytes() []byte {
+	return mustMarshal(a.OID())
+}
+
 func (a Algorithm) String() string {
 	switch a {
 	case P224:
@@ -133,4 +138,12 @@ func (a Algorithm) ByteLen() int {
 		return 0
 	}
 	return (bitLen + 7) / 8
+}
+
+func mustMarshal(val any) []byte {
+	if b, err := asn1.Marshal(val); err != nil {
+		panic(err)
+	} else {
+		return b
+	}
 }
