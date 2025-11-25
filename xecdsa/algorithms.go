@@ -98,6 +98,10 @@ func (a Algorithm) OIDBytes() []byte {
 	return mustMarshal(a.OID())
 }
 
+func (a Algorithm) Name() string {
+	return a.Curve().Params().Name
+}
+
 func (a Algorithm) String() string {
 	switch a {
 	case P224:
