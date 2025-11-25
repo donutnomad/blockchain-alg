@@ -3,6 +3,7 @@ package xecdsa
 import (
 	"crypto/elliptic"
 	"encoding/asn1"
+	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
@@ -142,6 +143,36 @@ func (a Algorithm) ByteLen() int {
 		return 0
 	}
 	return (bitLen + 7) / 8
+}
+
+// Params implements elliptic.Curve
+func (a Algorithm) Params() *elliptic.CurveParams {
+	return a.Curve().Params()
+}
+
+// IsOnCurve implements elliptic.Curve
+func (a Algorithm) IsOnCurve(x, y *big.Int) bool {
+	return a.Curve().IsOnCurve(x, y)
+}
+
+// Add implements elliptic.Curve
+func (a Algorithm) Add(x1, y1, x2, y2 *big.Int) (x, y *big.Int) {
+	return a.Curve().Add(x1, y1, x2, y2)
+}
+
+// Double implements elliptic.Curve
+func (a Algorithm) Double(x1, y1 *big.Int) (x, y *big.Int) {
+	return a.Curve().Double(x1, y1)
+}
+
+// ScalarMult implements elliptic.Curve
+func (a Algorithm) ScalarMult(x1, y1 *big.Int, k []byte) (x, y *big.Int) {
+	return a.Curve().ScalarMult(x1, y1, k)
+}
+
+// ScalarBaseMult implements elliptic.Curve
+func (a Algorithm) ScalarBaseMult(k []byte) (x, y *big.Int) {
+	return a.Curve().ScalarBaseMult(k)
 }
 
 func mustMarshal(val any) []byte {
