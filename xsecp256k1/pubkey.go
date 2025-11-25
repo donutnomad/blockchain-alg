@@ -10,6 +10,10 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+// ErrInvalidPublicKey is returned when the public key type is not supported.
+var ErrInvalidPublicKey = errors.New("invalid public key")
+
+// Address represents a 20-byte Ethereum address.
 type Address [20]byte
 
 // Hex returns an EIP55-compliant hex string representation of the address.
@@ -22,6 +26,7 @@ func (a Address) String() string {
 	return a.Hex()
 }
 
+// checksumHex computes the EIP55 checksum hex encoding of the address.
 func (a *Address) checksumHex() []byte {
 	var buf [len(a)*2 + 2]byte
 	copy(buf[:2], "0x")
@@ -46,15 +51,20 @@ func (a *Address) checksumHex() []byte {
 	return buf[:]
 }
 
+// PublicKey wraps a secp256k1 public key with additional utility methods.
 type PublicKey struct {
 	secp256k1.PublicKey
 }
 
+// Address derives the Ethereum address from the public key.
+// It computes the Keccak256 hash of the uncompressed public key (without the 0x04 prefix)
+// and returns the last 20 bytes.
 func (p *PublicKey) Address() Address {
 	bs := p.PublicKey.SerializeUncompressed()
 	return Address(Keccak256(bs[1:])[12:])
 }
 
+// NewPublicKeyFromEcdsa creates a PublicKey from a standard library ecdsa.PublicKey.
 func NewPublicKeyFromEcdsa(p *ecdsa.PublicKey) *PublicKey {
 	x := new(secp256k1.FieldVal)
 	y := new(secp256k1.FieldVal)
@@ -65,6 +75,7 @@ func NewPublicKeyFromEcdsa(p *ecdsa.PublicKey) *PublicKey {
 	}
 }
 
+// ParsePubKey parses a serialized public key in compressed (33 bytes) or uncompressed (65 bytes) format.
 func ParsePubKey(serialized []byte) (key *PublicKey, err error) {
 	pubKey, err := secp256k1.ParsePubKey(serialized)
 	if err != nil {
@@ -75,9 +86,28 @@ func ParsePubKey(serialized []byte) (key *PublicKey, err error) {
 	}, nil
 }
 
-var ErrInvalidPublicKey = errors.New("invalid public key")
+// DecompressPubkey parses a public key in the 33-byte compressed format.
+// It is an alias for ParsePubKey.
+func DecompressPubkey(serialized []byte) (key *PublicKey, err error) {
+	return ParsePubKey(serialized)
+}
 
-func PubToAddress(pub any) (Address, error) {
+// CompressPubkey serializes a public key in the 33-byte compressed format.
+func CompressPubkey(pub *PublicKey) []byte {
+	return pub.SerializeCompressed()
+}
+
+// PubkeyToAddress converts a public key to an Ethereum address.
+// It accepts multiple public key types: *PublicKey, *ecdsa.PublicKey, *secp256k1.PublicKey,
+// []byte (serialized), or string (hex encoded).
+func PubkeyToAddress[T *PublicKey | *ecdsa.PublicKey | *secp256k1.PublicKey | []byte | string](pub T) (Address, error) {
+	return PubToAddress(pub)
+}
+
+// PubToAddress converts a public key to an Ethereum address.
+// It accepts multiple public key types: *PublicKey, *ecdsa.PublicKey, *secp256k1.PublicKey,
+// []byte (serialized), or string (hex encoded).
+func PubToAddress[T *PublicKey | *ecdsa.PublicKey | *secp256k1.PublicKey | []byte | string](pub T) (Address, error) {
 	var bytesToAddress = func(bs []byte) (Address, error) {
 		key, err := ParsePubKey(bs)
 		if err != nil {
@@ -86,7 +116,7 @@ func PubToAddress(pub any) (Address, error) {
 		return key.Address(), nil
 	}
 
-	switch t := pub.(type) {
+	switch t := any(pub).(type) {
 	case *PublicKey:
 		return t.Address(), nil
 	case *ecdsa.PublicKey:
@@ -124,6 +154,7 @@ func Keccak256(data ...[]byte) []byte {
 	return b
 }
 
+// KeccakState wraps sha3.state, providing both hash.Hash and Read capabilities.
 type KeccakState interface {
 	hash.Hash
 	Read([]byte) (int, error)
