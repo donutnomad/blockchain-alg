@@ -2,6 +2,7 @@ package xecdsa
 
 import (
 	"crypto/elliptic"
+	"encoding/asn1"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
@@ -34,6 +35,7 @@ const (
 	// BitLen: 256 Bytes: 32
 	// N: 115792089237316195423570985008687907852837564279074904382605163141518161494337
 	Secp256k1 Algorithm = 5
+	S256      Algorithm = 6
 )
 
 func (a Algorithm) FromCurve(curve elliptic.Curve) Algorithm {
@@ -68,4 +70,67 @@ func (a Algorithm) Curve() elliptic.Curve {
 	default:
 		panic("unreachable")
 	}
+}
+
+func (a Algorithm) OID() asn1.ObjectIdentifier {
+	switch a {
+	case P224:
+		// secp224r1
+		return asn1.ObjectIdentifier{1, 3, 132, 0, 33}
+	case P256:
+		// prime256v1
+		return asn1.ObjectIdentifier{1, 2, 840, 10045, 3, 1, 7}
+	case P384:
+		// secp384r1
+		return asn1.ObjectIdentifier{1, 3, 132, 0, 34}
+	case P521:
+		// secp521r1
+		return asn1.ObjectIdentifier{1, 3, 132, 0, 35}
+	case Secp256k1:
+		return asn1.ObjectIdentifier{1, 3, 132, 0, 10}
+	default:
+		panic("unreachable")
+	}
+}
+
+func (a Algorithm) String() string {
+	switch a {
+	case P224:
+		return "P224"
+	case P256:
+		return "P256"
+	case P384:
+		return "P384"
+	case P521:
+		return "P521"
+	case Secp256k1:
+		return "Secp256k1"
+	default:
+		return "Unknown"
+	}
+}
+
+func (a Algorithm) BitLen() int {
+	switch a {
+	case P224:
+		return 224
+	case P256:
+		return 256
+	case P384:
+		return 384
+	case P521:
+		return 521
+	case Secp256k1:
+		return 256
+	default:
+		return 0
+	}
+}
+
+func (a Algorithm) ByteLen() int {
+	bitLen := a.BitLen()
+	if bitLen == 0 {
+		return 0
+	}
+	return (bitLen + 7) / 8
 }
